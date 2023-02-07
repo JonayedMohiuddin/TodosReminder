@@ -38,6 +38,9 @@
 			<Add option="-Wall" />
 		</Compiler>
 		<Unit filename="constants.h" />
+		<Unit filename="file_handler.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="iMain.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
