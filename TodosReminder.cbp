@@ -41,6 +41,7 @@
 		<Unit filename="file_handler.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="iGraphics.h" />
 		<Unit filename="iMain.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />

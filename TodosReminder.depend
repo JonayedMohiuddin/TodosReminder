@@ -1,12 +1,12 @@
 # depslib dependency file v1.0
 1675099586 source:e:\igraphics_games\todosreminder\buttonmanager.c
 
-1675787137 source:e:\igraphics_games\todosreminder\imain.cpp
+1675934191 source:e:\igraphics_games\todosreminder\imain.cpp
 	"iGraphics.h"
 	"constants.h"
 	"file_handler.c"
 
-1675362529 e:\igraphics_games\todosreminder\igraphics.h
+1675362530 e:\igraphics_games\todosreminder\igraphics.h
 	<stdio.h>
 	<stdlib.h>
 	<gl/glut.h>
@@ -26,9 +26,9 @@
 1675414718 e:\igraphics_games\todosreminder\libraries.h
 	"iGraphics.h"
 
-1675786513 e:\igraphics_games\todosreminder\constants.h
+1675934275 e:\igraphics_games\todosreminder\constants.h
 
-1675785554 source:e:\igraphics_games\todosreminder\file_handler.c
+1675785556 source:e:\igraphics_games\todosreminder\file_handler.c
 
-1675785554 e:\igraphics_games\todosreminder\file_handler.c
+1675785556 e:\igraphics_games\todosreminder\file_handler.c
 
