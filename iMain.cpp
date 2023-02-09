@@ -2,7 +2,25 @@
 #include "constants.h"
 #include "file_handler.c"
 
-enum WINDOW_MODES {SPLASH_SCREEN=101, SETTINGS=102, HOME=103, TASK_DETAIL=104, TUTORIAL=105};
+// WINDOW MODES FOR VARIOUS WINDOWS
+enum WINDOW_MODES
+{
+    SPLASH_SCREEN = 101,
+
+    HOME = 110,
+    TASK_DETAIL = 111,
+
+    SETTINGS = 121,
+    TUTORIAL = 122,
+    PROJECT_DETAILS = 123,
+    RESIZE_WINDOW = 124,
+    COLOR_PICKER = 125,
+};
+
+// METHODS DEFINITIONS
+
+void initEditMode(char* textToEdit, int textBoxX, int textBoxY, int charecterWidth, int maxLength);
+void endEditMode();
 
 // ==================================================================================================
 // ================================ START TIME ======================================================
@@ -25,7 +43,7 @@ typedef struct
 Time calculateDeadline(Time start, Time interval)
 {
     Time deadline;
-
+    // MIGHT IMPLEMENT A ALGORITHM LATER
     return deadline;
 }
 
@@ -37,6 +55,7 @@ Time calculateDeadline(Time start, Time interval)
 // ================================ START CLICK CHECKER =============================================
 // ==================================================================================================
 
+// CHECKS IF A POINT IS INSIDE A RECTANGLE. USED FOR RECTANGULAR BUTTON.
 int isRectangleClicked(int pointX, int pointY, int x, int y, int w, int h)
 {
     if(pointX >= x && pointX <= (x+w) && pointY >= y && pointY <= (y+h))
@@ -47,6 +66,7 @@ int isRectangleClicked(int pointX, int pointY, int x, int y, int w, int h)
     return FALSE;
 }
 
+// CHECKS IF A POINT IS INSIDE A CIRCLE. USED FOR CIRCULAR BUTTON.
 int isCircleClicked(int pointX, int pointY, int x, int y, int r)
 {
     if((pointX - x)*(pointX - x) + (pointY - y)*(pointY - y) <= r*r)
@@ -56,22 +76,22 @@ int isCircleClicked(int pointX, int pointY, int x, int y, int r)
 
     return FALSE;
 }
+
 // ==================================================================================================
 // ================================== END CLICK CHECKER =============================================
 // ==================================================================================================
-
 
 // ==================================================================================================
 // ================================ START TASKS =====================================================
 // ==================================================================================================
 
+// TASK MENU X AND Y. MOVES WITH SLIDER FOR SLIDING EFFECT.
 float taskMenuX = 0;
 float taskMenuY = 0;
 
 typedef struct
 {
-    int position;
-    int id;
+    int id; // UNIQUE ID
 
     char title[TASK_TITLE_CHAR_COUNT + 5];
     char miniDetail[TASK_MINI_DETAIL_CHAR_COUNT + 5];
@@ -87,18 +107,28 @@ typedef struct
 
 int currentTaskCount = 0; // Starts from 0.
 int uniqueTaskId = 1; // Only goes up to ensure uniqueness. Starts from 1.
-Task tasks[TASK_MAX_COUNT];
-Task temporary = {0, -1, "NO TITLE", "", "", FALSE, FALSE, NULL, NULL, NULL};
 
+Task tasks[TASK_MAX_COUNT]; // ARRAY OF TASKS.
+
+Task temporary = {-1, "NO TITLE", "", "", FALSE, FALSE, NULL, NULL, NULL}; // USED FOR INPUT (AND FOR CALCULATIONS SOMETIMES)
+
+// ADD TASK TO THE TASK LIST
 void addTask(char* title, char* detail, Time deadLine)
 {
+    if(currentTaskCount >= TASK_MAX_COUNT)
+    {
+        printf("TASK LIMIT REACHED REMOVE SOME TASKS FIRST!\n");
+        return;
+    }
+
     strcpy(temporary.title, title);
     strcpy(temporary.detail, detail);
-    strncpy(temporary.miniDetail, detail, TASK_MINI_DETAIL_CHAR_COUNT);
-    temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT]   = '.';
+    // MAKE A MINIMIZED VERSION OF THE DETAIL TO BE DISPLAYED IN THE TASK
+    strncpy(temporary.miniDetail, detail, TASK_MINI_DETAIL_CHAR_COUNT); // COPY SOME PARTS
+    temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT]   = '.'; // ADD TAILING "..."
     temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT+1] = '.';
     temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT+2] = '.';
-    temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT+3] = '\0';
+    temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT+3] = '\0'; // TERMINATE MINI DETAIL
 
     temporary.deadline = deadLine;
 
@@ -116,7 +146,7 @@ void addTask(char* title, char* detail, Time deadLine)
     currentTaskCount++;
 }
 
-
+// ADD TASK (NO ARGUMENT). CALLS ITSELF WITH THE ARGUMENTS FILLED WITH EMPTY DATA.
 void addTask()
 {
     Time deadline;
@@ -144,7 +174,9 @@ void setTaskDetail(int id, char* detail)
     {
         if(tasks[i].id == id)
         {
+            // SET DETAIL
             strcpy(tasks[i].detail, detail);
+            // SET MINI DETAIL
             strncpy(tasks[i].miniDetail, detail, TASK_MINI_DETAIL_CHAR_COUNT);
             temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT]   = '.';
             temporary.miniDetail[TASK_MINI_DETAIL_CHAR_COUNT+1] = '.';
@@ -203,6 +235,10 @@ void setTaskAsNotFavourite(int id)
     }
 }
 
+// REMOVE THE TASK IF THE ID MATCHES THE PASSED ID.
+// PUSHBACK ALL THE IDS INTO THE GAP
+// DECREASE THE TASK COUNT (VIRTUAL SIZE)
+// [1][2][3][4][5] --> remove(3) --> [1][2]   [3][4] --> [1][2][4][5]
 void removeTask(int id)
 {
     int pushBask = FALSE;
@@ -210,22 +246,32 @@ void removeTask(int id)
     {
         if(tasks[i].id == id)
         {
-            pushBask = TRUE;
+            pushBask = TRUE; // THREAT ELIMINATED, NOW PUSH BACK!!
         }
 
         if(pushBask)
         {
-            if(i < currentTaskCount-1)
+            if(i < (currentTaskCount - 1))
             {
                 tasks[i] = tasks[i+1];
             }
         }
     }
+
     currentTaskCount--;
 }
 
-void checkTaskClicks(double mx, double my)
+
+// IS ANY BUTTON ON THE TASK CLICKED ??
+// TAKE ACTION
+// BUTTONS : [ADD] [TICK] [DETAIL] [FAVOURITE] [REMOVE]
+void checkTaskClicks(int mx, int my)
 {
+    // IDEA : JUST END THE EDIT MODE IF MOUSE CLICK IS REGISTERED.
+    // DONT PANIC IT WILL GET INITIATED IF CLICKED ON THE TEXT BOX IT WAS PREVIULY EDITING
+    // WHY? TO STOP EDITING IF USER CLICKS ELSEWHERE
+    endEditMode();
+
     Task currentTask;
     int currentTaskX;
     int currentTaskY;
@@ -233,7 +279,7 @@ void checkTaskClicks(double mx, double my)
     // CHECK TASK ADD BUTTON
     if(isCircleClicked(mx, my, TASK_ADD_BUTTON_X, TASK_ADD_BUTTON_Y, TASK_ADD_BUTTON_R))
     {
-        printf("ADD BUTTON CLICKED\n");
+        printf("ADD BUTTON CLICKED. (COUNT : %d)\n", currentTaskCount+1);
         addTask();
         return ;
     }
@@ -245,6 +291,7 @@ void checkTaskClicks(double mx, double my)
 
         currentTask = tasks[i];
 
+        // TICK BUTTON
         if(isCircleClicked(mx, my, currentTaskX + TASK_TICK_BUTTON_X, currentTaskY + TASK_TICK_BUTTON_Y, TASK_TICK_BUTTON_R))
         {
             printf("TICK BUTTON CLICKED. TASK ID : %d\n", currentTask.id);
@@ -257,18 +304,31 @@ void checkTaskClicks(double mx, double my)
                 setTaskAsDone(currentTask.id);
             }
         }
+
+        // DETAIL BUTTON
         else if(isRectangleClicked(mx, my, currentTaskX + TASK_DETAIL_BUTTON_X, currentTaskY + TASK_DETAIL_BUTTON_Y, TASK_DETAIL_BUTTON_W, TASK_DETAIL_BUTTON_H))
         {
             printf("DETAIL BUTTON CLICKED. TASK ID : %d\n", currentTask.id);
         }
+
+        // REMOVE BUTTON
         else if(isCircleClicked(mx, my, currentTaskX + TASK_REMOVE_BUTTON_X, currentTaskY + TASK_REMOVE_BUTTON_Y, TASK_REMOVE_BUTTON_R))
         {
             printf("REMOVE TASK BUTTON CLICKED. TASK ID : %d\n", currentTask.id);
             removeTask(currentTask.id);
         }
+
+        // FAVOURITE BUTTON
         else if(isCircleClicked(mx, my, currentTaskX + TASK_FAV_BUTTON_X, currentTaskY + TASK_ADD_BUTTON_Y, TASK_FAV_BUTTON_R))
         {
             printf("FAVOURITE BUTTON CLICKED. TASK ID : %d\n", currentTask.id);
+        }
+
+        // TITLE INPUT BOX. IF PRESSED INSIDE THIS BOX TITLE EDIT IS TRIGGERED.
+        else if(isRectangleClicked(mx, my, currentTaskX + TASK_TITLE_INPUT_BOX_X, currentTaskY + TASK_TITLE_INPUT_BOX_Y, TASK_TITLE_INPUT_BOX_W, TASK_TITLE_INPUT_BOX_H))
+        {
+            printf("TITLE INPUT BOX CLICKED.\n");
+            initEditMode(tasks[i].title, currentTaskX + TASK_TITLE_X, currentTaskY + TASK_TITLE_Y, 9, TASK_TITLE_CHAR_COUNT);
         }
     }
 }
@@ -280,8 +340,9 @@ void updateTask()
 
 void drawTasks()
 {
-    double currentTaskX, currentTaskY;
+    double currentTaskX, currentTaskY; // X AND Y OF THE TASK CURRENTLY ITERATING
 
+    // SHOW ADD TASK MESSAGE IF THERE IS NO TASK
     if(currentTaskCount == 0)
     {
         iText(20, WINDOW_HEIGHT - 40, "Add new task using the ADD TASK button below.", GLUT_BITMAP_HELVETICA_18);
@@ -290,11 +351,11 @@ void drawTasks()
 
     for(int i = 0; i < currentTaskCount; i++)
     {
-        // TASK BODY X AND Y CO-ORDINATE
+        // CALCULATE TASK BODY X AND Y CO-ORDINATE
         currentTaskX = taskMenuX + TASK_SPACE_SIDE;
         currentTaskY = WINDOW_HEIGHT - ((i+1)*TASK_HEIGHT + (i+1)*TASK_SPACE_BETWEEN);
 
-        // TASK BODY
+        // TASK BODY (BACKGROUND ACTUALLY)
         iSetColor(TASK_COLOR_R, TASK_COLOR_G, TASK_COLOR_B);
         iFilledRectangle(currentTaskX, currentTaskY, TASK_WIDTH, TASK_HEIGHT);
 
@@ -323,9 +384,12 @@ void drawTasks()
         // TEXT : TITLE AND MINI DETAILS
         iSetColor(TASK_TEXT_COLOR_R, TASK_TEXT_COLOR_G, TASK_TEXT_COLOR_B);
         // TITLE
-        iText(currentTaskX + TASK_TITLE_X, currentTaskY + TASK_TITLE_Y, tasks[i].title, GLUT_BITMAP_HELVETICA_18);
+        iText(currentTaskX + TASK_TITLE_X, currentTaskY + TASK_TITLE_Y, tasks[i].title, GLUT_BITMAP_9_BY_15); //GLUT_BITMAP_HELVETICA_18);
+        // DEBUG : TITLE INPUT TEXT BOX
+        // iRectangle(currentTaskX + TASK_TITLE_INPUT_BOX_X, currentTaskY + TASK_TITLE_INPUT_BOX_Y, TASK_TITLE_INPUT_BOX_W, TASK_TITLE_INPUT_BOX_H);
+
         // MINI DETAILS
-        iText(currentTaskX + TASK_MINI_DETAIL_X, currentTaskY + TASK_MINI_DETAIL_Y, tasks[i].miniDetail, GLUT_BITMAP_HELVETICA_12);
+        iText(currentTaskX + TASK_MINI_DETAIL_X, currentTaskY + TASK_MINI_DETAIL_Y, tasks[i].miniDetail, GLUT_BITMAP_8_BY_13); //GLUT_BITMAP_HELVETICA_12);
     }
 
     // DRAW ADD BUTTON (NOT REPETETIVELY JUST ONCE)
@@ -337,42 +401,204 @@ void drawTasks()
 // ================================== END TASKS =====================================================
 // ==================================================================================================
 
+
+// ==================================================================================================
+// ================================ START TEXT INPUT ================================================
+// ==================================================================================================
+
+int isCursorDisplayed = 1;
+int currentCursorPosition = 0;
+
+int textBoxPosX = 0, textBoxPosY = 0;
+int charWidth = 0;
+
+int isEditMode = FALSE;
+char* editString;
+int lengthOfEditString;
+int maxLengthOfEditString;
+
+void blinkingCursor(void)
+{
+    isCursorDisplayed *= -1;
+}
+
+void moveCursor(unsigned char key)
+{
+    if(key == GLUT_KEY_LEFT)
+    {
+        if(currentCursorPosition > 0)
+        {
+            currentCursorPosition--;
+        }
+    }
+    else if(key == GLUT_KEY_RIGHT)
+    {
+        if(currentCursorPosition < lengthOfEditString)
+        {
+            currentCursorPosition++;
+        }
+    }
+}
+
+void drawCursor()
+{
+    if(isEditMode && isCursorDisplayed == 1)
+    {
+        iSetColor(255, 255, 255);
+        iFilledRectangle(textBoxPosX + currentCursorPosition*charWidth, textBoxPosY, CURSOR_WIDTH, CURSOR_HEIGHT);
+    }
+}
+
+void pushLeft(char *str, int fromIndex, int *length)
+{
+    for (int i = fromIndex; i < *length; i++)
+    {
+        str[i] = str[i + 1];
+    }
+
+    str[*length] = '\0';
+    (*length)--;
+}
+
+void pushRight(char *str, int fromIndex, int *length)
+{
+    for (int i = *length; i > fromIndex; i--)
+    {
+        str[i] = str[i - 1];
+    }
+
+    (*length)++;
+    str[*length] = '\0';
+}
+
+void initEditMode(char* textToEdit, int textBoxX, int textBoxY, int charecterWidth, int maxLength)
+{
+    textBoxPosX = textBoxX;
+    textBoxPosY = textBoxY;
+
+    isEditMode = TRUE;
+    editString = textToEdit;
+    lengthOfEditString = strlen(editString);
+    maxLengthOfEditString = maxLength;
+
+    charWidth = charecterWidth;
+
+    currentCursorPosition = lengthOfEditString;
+
+    printf("EDIT MODE INITIATED (%s)\n", editString);
+}
+
+void endEditMode()
+{
+    if(editString != NULL)
+    {
+        printf("EDIT MODE ENDED (%s)\n", editString);
+    }
+
+    isEditMode = FALSE;
+    editString = nullptr;
+    charWidth = 0;
+}
+
+void writeOnTextBox(unsigned char key)
+{
+    if(isEditMode)
+    {
+        if(key == '\r')
+        {
+            endEditMode();
+        }
+        else if(key == '\b')
+        {
+            if(lengthOfEditString > 0)
+            {
+                pushLeft(editString, currentCursorPosition-1, &lengthOfEditString);
+                currentCursorPosition--;
+            }
+        }
+        else
+        {
+            if(lengthOfEditString < maxLengthOfEditString)
+            {
+
+                if(currentCursorPosition < lengthOfEditString)
+                {
+                    pushRight(editString, currentCursorPosition, &lengthOfEditString);
+                    editString[currentCursorPosition] = key;
+                }
+                else
+                {
+                    editString[currentCursorPosition] = key;
+                    lengthOfEditString++;
+                }
+                currentCursorPosition++;
+            }
+        }
+    }
+}
+
+// ==================================================================================================
+// ================================ END TEXT INPUT ==================================================
+// ==================================================================================================
+
 // ==================================================================================================
 // ================================ START SLIDER ====================================================
 // ==================================================================================================
 
-double sliderHandleX = SLIDER_HANDLE_X;
-double sliderHandleY = WINDOW_HEIGHT - SLIDER_HANDLE_H;
+double sliderHandleX = SLIDER_HANDLE_X; // NOT INTERESETED
+double sliderHandleY = WINDOW_HEIGHT - SLIDER_HANDLE_H; // MY MAIN POINT OF FOCUS
 
-double previousMx = -1;
-double previousMy=-1;
+// INITIALISED TO -1, TO IDENTIFY THE FIRST CLICK.
+int previousMx = -1;
+int previousMy = -1;
 
-int test = -1;
+int totalPageCount = 1; // Perpage 7 tasks
 
-void isSliderHandleClicked(double mx, double my)
+// MOVE SLIDER BY THE DEVIATION OF THE Y CORD OF MOUSE
+void moveSlider(int mx, int my)
 {
-
-}
-
-void moveSlider(double mx, double my)
-{
-    if(previousMx != -1 && previousMy != -1)
+    if(previousMx == -1 && previousMy == -1)
     {
-
+        if(isRectangleClicked(mx, my, sliderHandleX, sliderHandleY, SLIDER_HANDLE_W, SLIDER_HANDLE_H))
+        {
+            previousMx = mx;
+            previousMy = my;
+            printf("SLIDER MOVED.\n");
+        }
     }
+    else
+    {
+        sliderHandleY += my - previousMy;
 
-    sliderHandleY += test;
+        if(sliderHandleY <= 0)
+        {
+            sliderHandleY = 0;
+        }
+        else if((sliderHandleY + SLIDER_HANDLE_H) >= WINDOW_HEIGHT)
+        {
+            sliderHandleY = WINDOW_HEIGHT - SLIDER_HANDLE_H;
+        }
 
-    if(sliderHandleY <= 0) test *= -1;
-    else if((sliderHandleY + SLIDER_HANDLE_H) >= WINDOW_HEIGHT) test *= -1;
+        previousMx = mx;
+        previousMy = my;
+    }
 }
 
+// (IF MOUSE CLICK RELEASED) RESET THE PREVIOUS MOUSE CO ORDINATES TO -1
 void sliderMovingStopped()
 {
     previousMx = -1;
     previousMy = -1;
 }
 
+// IF TASK IS ADDED SLIDER BECOMES SMALLER AND
+// IT DEVIATES THE PAGE A LITTLE
+void recalculateSlider()
+{
+
+}
+
+// DRAWS THE SLIDER BACKGROUND AND HANDLE
 void drawSlider()
 {
     // SLIDER BG
@@ -392,6 +618,7 @@ void drawSlider()
 // ================================ START BACKGROUND ================================================
 // ==================================================================================================
 
+// BACKGROUND OF THE WHOLE APP
 void drawBackground()
 {
     iSetColor(BACKGROUND_COLOR_R, BACKGROUND_COLOR_G, BACKGROUND_COLOR_B);
@@ -408,8 +635,11 @@ void drawBackground()
 
 int main()
 {
+    iSetTimer(CURSOR_BLINK_TIME, blinkingCursor);
+
     enum WINDOW_MODES CURRENT_WINDOW;
     CURRENT_WINDOW = HOME;
+    addTask();
     addTask();
     addTask();
     addTask();
@@ -436,43 +666,46 @@ int main()
 
 void iMouseMove(int mx, int my)
 {
-
+    moveSlider(mx, my);
 }
 
 void iMouse(int button, int state, int mx, int my)
 {
     if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
-	{
+    {
         checkTaskClicks(mx, my);
-	}
+    }
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+    {
+        sliderMovingStopped();
+    }
 }
 
 void iKeyboard(unsigned char key)
 {
-    if (key == 'q')
-    {
-        exit(0);
-    }
+    writeOnTextBox(key);
 }
 
 void iSpecialKeyboard(unsigned char key)
 {
-
+    moveCursor(key);
 }
 
-void update()
+void iUpdate()
 {
     updateTask();
 }
 
 void iDraw()
 {
-    update();
+    iUpdate();
     iClear();
+
     // DRAWING
     drawBackground;
     drawTasks();
     drawSlider();
+    drawCursor();
 }
 
 // ==================================================================================================
