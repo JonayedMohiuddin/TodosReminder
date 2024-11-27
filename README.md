@@ -47,3 +47,13 @@ This project is a graphical application developed using the **iGraphics** librar
   ```sh
   g++ iMain.cpp -o ToDoReminder -lGL -lGLU -lglut
   ./ToDoReminder
+
+### Special Notes
+- **Platform**: The project is designed for Windows but can be adapted to other platforms with OpenGL support.
+- **Assets**: Ensure the assets/ directory (containing images like buttons and backgrounds) is correctly placed in the same directory as the executable.
+- **Customizations**:
+  - The task limit and default settings can be adjusted in iMain.cpp.
+  - Visual styles can be modified by editing associated assets.
+ 
+### License
+This project is licensed under the (MIT License)[].
