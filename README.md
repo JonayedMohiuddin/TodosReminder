@@ -55,5 +55,3 @@ This project is a graphical application developed using the **iGraphics** librar
   - The task limit and default settings can be adjusted in iMain.cpp.
   - Visual styles can be modified by editing associated assets.
  
-### License
-This project is licensed under the (MIT License)[].
